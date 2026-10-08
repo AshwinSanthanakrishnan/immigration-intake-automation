@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Client Intake · Example Immigration Law Group (Demo)</title>
+  <style>
+    :root {
+      --bg: #f3f5f8;
+      --card: #ffffff;
+      --ink: #1b2430;
+      --muted: #5c6777;
+      --line: #d8dee6;
+      --accent: #1d4a73;
+      --accent-hover: #163a5b;
+      --focus: #2f7fd8;
+      --ok: #1d7a4e;
+      --ok-bg: #e7f4ed;
+      --err: #a3262c;
+      --err-bg: #fcecec;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .topbar { background: var(--accent); color: #fff; }
+    .topbar .inner {
+      max-width: 860px; margin: 0 auto; padding: 16px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .brand { font-weight: 600; letter-spacing: .2px; }
+    .brand small { display: block; font-weight: 400; font-size: 12px; opacity: .8; }
+    .badge {
+      font-size: 12px; white-space: nowrap; padding: 4px 10px; border-radius: 999px;
+      background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .35);
+    }
+    main { max-width: 860px; margin: 28px auto; padding: 0 24px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+      padding: 28px; box-shadow: 0 1px 2px rgba(16, 24, 40, .05);
+    }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    .lede { color: var(--muted); margin: 0 0 24px; }
+    fieldset { border: 0; padding: 0; margin: 0 0 22px; }
+    legend {
+      font-size: 12px; font-weight: 600; letter-spacing: .7px; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 12px;
+    }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; }
+    .full { grid-column: 1 / -1; }
+    label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .req { color: var(--err); margin-left: 2px; }
+    input, select, textarea {
+      width: 100%; padding: 9px 11px; font: inherit; color: inherit; background: #fff;
+      border: 1px solid var(--line); border-radius: 6px;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid var(--focus); outline-offset: 1px; border-color: var(--focus);
+    }
+    textarea { min-height: 96px; resize: vertical; }
+    .actions {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      border-top: 1px solid var(--line); padding-top: 20px;
+    }
+    .hint { margin: 0; color: var(--muted); font-size: 13px; }
+    button {
+      font: inherit; font-weight: 600; color: #fff; background: var(--accent);
+      border: 0; border-radius: 6px; padding: 10px 20px; cursor: pointer;
+    }
+    button:hover { background: var(--accent-hover); }
+    button:disabled { opacity: .6; cursor: progress; }
+    .alert {
+      margin-bottom: 20px; padding: 10px 14px; border-radius: 6px;
+      color: var(--err); background: var(--err-bg); border: 1px solid #f1c3c5;
+    }
+    .confirm { border-left: 4px solid var(--ok); }
+    .confirm h2 { margin: 0 0 6px; font-size: 20px; color: var(--ok); }
+    .case-id {
+      display: inline-block; padding: 6px 10px; border-radius: 6px; letter-spacing: .5px;
+      font: 600 18px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--ok); background: var(--ok-bg);
+    }
+    dl.summary { display: grid; grid-template-columns: max-content 1fr; gap: 6px 20px; margin: 20px 0 24px; }
+    dl.summary dt { color: var(--muted); }
+    dl.summary dd { margin: 0; }
+    footer { max-width: 860px; margin: 0 auto 32px; padding: 0 24px; color: var(--muted); font-size: 12px; }
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: 1fr; }
+      .actions { flex-direction: column; align-items: stretch; }
+      .topbar .inner { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="inner">
+      <div class="brand">Example Immigration Law Group<small>Client Intake System</small></div>
+      <span class="badge">Demo environment · fictional data only</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="card" id="intake-card">
+      <h1>New client intake</h1>
+      <p class="lede">Record a prospective client's details. Every intake is reviewed by an attorney before the client is contacted.</p>
+
+      <div id="form-error" class="alert" role="alert" hidden></div>
+
+      <form id="intake-form" autocomplete="off">
+        <fieldset>
+          <legend>Client</legend>
+          <div class="grid">
+            <div class="full">
+              <label for="full_name">Full legal name<span class="req" aria-hidden="true">*</span></label>
+              <input id="full_name" name="full_name" type="text" required>
+            </div>
+            <div>
+              <label for="email">Email address<span class="req" aria-hidden="true">*</span></label>
+              <input id="email" name="email" type="email" required>
+            </div>
+            <div>
+              <label for="phone">Phone number<span class="req" aria-hidden="true">*</span></label>
+              <input id="phone" name="phone" type="tel" required>
+            </div>
+            <div>
+              <label for="country_of_citizenship">Country of citizenship<span class="req" aria-hidden="true">*</span></label>
+              <input id="country_of_citizenship" name="country_of_citizenship" type="text" required>
+            </div>
+            <div>
+              <label for="date_of_birth">Date of birth<span class="req" aria-hidden="true">*</span></label>
+              <input id="date_of_birth" name="date_of_birth" type="date" min="1900-01-01" required>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Matter</legend>
+          <div class="grid">
+            <div>
+              <label for="case_type">Case type<span class="req" aria-hidden="true">*</span></label>
+              <select id="case_type" name="case_type" required>
+                <option value="">Select a case type…</option>
+                <option value="H-1B">H-1B</option>
+                <option value="Family Green Card">Family Green Card</option>
+                <option value="Naturalization">Naturalization</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label for="urgency">Urgency<span class="req" aria-hidden="true">*</span></label>
+              <select id="urgency" name="urgency" required>
+                <option value="">Select urgency…</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div class="full">
+              <label for="notes">Notes</label>
+              <textarea id="notes" name="notes"></textarea>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <p class="hint">Fields marked <span class="req">*</span> are required.</p>
+          <button type="submit" id="submit-btn">Submit intake</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card confirm" id="confirmation" role="status" aria-live="polite" tabindex="-1" hidden>
+      <h2>Intake received</h2>
+      <p>The intake has been recorded and queued for attorney review.</p>
+      <p>Case ID: <span class="case-id" id="case-id"></span></p>
+      <dl class="summary" id="summary"></dl>
+      <button type="button" id="new-intake">Start another intake</button>
+    </section>
+  </main>
+
+  <footer>Local demo. Submissions stay on this machine and are discarded when the demo stops.</footer>
+
+  <script>
+    const form = document.getElementById("intake-form");
+    const intakeCard = document.getElementById("intake-card");
+    const confirmation = document.getElementById("confirmation");
+    const errorBox = document.getElementById("form-error");
+    const submitBtn = document.getElementById("submit-btn");
+
+    document.getElementById("date_of_birth").max = new Date().toISOString().slice(0, 10);
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      errorBox.hidden = true;
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Submitting…";
+      const data = Object.fromEntries(new FormData(form).entries());
+      try {
+        const response = await fetch("/api/intake", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error || `Submission failed (HTTP ${response.status})`);
+        showConfirmation(body.case_id, data);
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.hidden = false;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit intake";
+      }
+    });
+
+    function showConfirmation(caseId, data) {
+      document.getElementById("case-id").textContent = caseId;
+      const rows = [
+        ["Client", data.full_name],
+        ["Email", data.email],
+        ["Case type", data.case_type],
+        ["Urgency", data.urgency.charAt(0).toUpperCase() + data.urgency.slice(1)],
+      ];
+      document.getElementById("summary").replaceChildren(
+        ...rows.flatMap(([term, value]) => {
+          const dt = document.createElement("dt");
+          const dd = document.createElement("dd");
+          dt.textContent = term;
+          dd.textContent = value;
+          return [dt, dd];
+        })
+      );
+      intakeCard.hidden = true;
+      confirmation.hidden = false;
+      confirmation.focus();
+    }
+
+    document.getElementById("new-intake").addEventListener("click", () => {
+      form.reset();
+      confirmation.hidden = true;
+      intakeCard.hidden = false;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+From: Dr. Fatima Mansoor <f.mansoor@biomed.example>
+To: intake@example-immigration-law.test
+Date: Wed, 7 Oct 2026 14:05:00 -0400
+Subject: H-1B 3-year extension filing
+
+Dear Immigration Counsel,
+
+My university employer requested that I connect with your office to handle my upcoming H-1B extension. I work as a senior oncology researcher.
+
+Key details:
+- Full name: Fatima Mansoor
+- Email: f.mansoor@biomed.example
+- Phone: (555) 623-4100
+- Country of citizenship: United Arab Emirates
+- Date of birth: February 14, 1993
+- Case type: H-1B extension
+- Urgency: High. My current I-94 status expires on November 30, 2026, so we have approximately 50 days to submit the petition to USCIS.
+
+Please send me the list of documents needed from my department.
+
+Sincerely,
+Dr. Fatima Mansoor

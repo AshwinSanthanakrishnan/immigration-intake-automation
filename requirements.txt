@@ -1,0 +1,7 @@
+google-genai>=2.0,<3
+pypdf>=5.0
+anthropic>=1.12,<2
+playwright>=1.55
+pydantic>=2.11,<3
+python-dotenv>=1.0
+pytest>=8
