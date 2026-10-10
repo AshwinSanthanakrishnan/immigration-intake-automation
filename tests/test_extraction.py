@@ -100,11 +100,39 @@ def test_missing_fields_are_deduplicated_in_a_stable_order():
         pytest.param({"date_of_birth": (date.today() + timedelta(days=1)).isoformat()}, id="future date of birth"),
         pytest.param({"missing_fields": ["passport_number"]}, id="unknown missing field"),
         pytest.param({"notes": "extra"}, id="unexpected extra field"),
+        pytest.param({"marital_status": "engaged"}, id="unknown marital status"),
+        pytest.param({"preferred_contact_method": "fax"}, id="unknown contact method"),
+        pytest.param({"status_expires_on": "1800-01-01"}, id="implausible status expiry"),
     ],
 )
 def test_invalid_values_are_rejected(overrides):
     with pytest.raises(ValidationError):
         parse_extraction(json.dumps(make_payload(**overrides)))
+
+
+def test_optional_details_are_normalized_and_never_required():
+    payload = make_payload(
+        marital_status="Married",
+        preferred_contact_method="EMAIL",
+        status_expires_on="2026-12-15",
+        employer="N/A",
+        consultation_requested=True,
+    )
+    record = parse_extraction(json.dumps(payload))
+
+    assert record.is_complete
+    assert record.marital_status == "married"
+    assert record.preferred_contact_method == "email"
+    assert record.status_expires_on == date(2026, 12, 15)
+    assert record.employer is None
+    assert record.optional_value("consultation_requested") == "Yes"
+
+
+def test_optional_details_default_to_none_when_omitted():
+    record = parse_extraction(json.dumps(make_payload()))
+
+    assert record.occupation is None
+    assert record.is_complete
 
 
 def test_missing_key_is_rejected():

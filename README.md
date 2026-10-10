@@ -27,12 +27,12 @@ For every file in `sample_inputs/`, the program runs these steps:
 | # | Step | What happens |
 |---|---|---|
 | 1 | **Read** | Loads the email from a `.txt`, `.pdf`, `.eml` or `.md` file. |
-| 2 | **Extract** | AI pulls out name, email, phone, country of citizenship, date of birth, case type (H-1B, Family Green Card, Naturalization or Other) and urgency with a reason. The result is checked against strict rules. If the answer is invalid it retries once, then flags the record for a person. |
+| 2 | **Extract** | AI pulls out the five required details (name, email, phone, country of citizenship, date of birth), the case type (H-1B, Family Green Card, Naturalization or Other) and urgency with a reason, plus optional background when the client mentions it: country of birth, current city, marital status, preferred contact method, immigration status and its expiry date, occupation, employer, education, case subtype, whether they want a consultation, and a one-line matter summary. The result is checked against strict rules. If the answer is invalid it retries once, then flags the record for a person. |
 | 3 | **Decide** | If any required detail is missing, the record is **not submitted**. The AI drafts a polite follow-up email asking for exactly what's missing, saved for staff to review. |
 | 4 | **Fill the form** | For complete records, a browser (Playwright) opens the intake form, types every field and clicks Submit. You can watch it happen. |
 | 5 | **Verify** | The program checks that a confirmation and case ID appeared **and** that the intake system stored the same details. It marks the record PASS or FAIL and saves a screenshot. |
 | 6 | **Checklist** | For each accepted case, the AI drafts a list of documents the client typically needs, marked as a draft for attorney review. |
-| 7 | **Report** | Writes `outputs/run_report.md` with counts, PASS/FAIL, timings and next steps for staff. |
+| 7 | **Report** | Writes `outputs/run_report.pdf` with counts, PASS/FAIL, timings, every client's details, confirmation screenshots and next steps for staff. A Markdown copy (`run_report.md`) is saved next to it. |
 
 One bad file never stops the run. The problem is recorded in the report and the next file is processed.
 
@@ -95,7 +95,8 @@ After a run, the `outputs/` folder contains:
 
 | Path | Contents |
 |---|---|
-| `run_report.md` | The summary of the whole run. Start here. |
+| `run_report.pdf` | The summary of the whole run. Start here. |
+| `run_report.md` | The same report as Markdown. |
 | `screenshots/` | A screenshot of each confirmation page. |
 | `followups/` | Draft replies to clients with missing information. |
 | `checklists/` | Draft document checklists, one per accepted case. |
@@ -128,7 +129,8 @@ Example from a run on the sample files:
 | `src/form_filler.py` | The browser automation that fills in and submits the form. |
 | `src/verification.py` | Confirms each submission landed and takes the screenshot. |
 | `src/drafts.py` | Saves follow-up emails and checklists with review banners. |
-| `src/reporting.py` | Builds the run report. |
+| `src/reporting.py` | Builds the run report (Markdown). |
+| `src/report_pdf.py` | Renders the run report as a PDF. |
 | `src/pipeline.py` | Runs the steps above for each file. |
 | `src/offline_ai.py` | The keyword-rule stand-in used by `--offline`. |
 | `intake_form/index.html` | The demo intake form. |

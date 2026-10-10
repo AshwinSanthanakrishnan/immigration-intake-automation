@@ -16,6 +16,7 @@ from typing import Any
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, expect
 
+from .form_filler import form_values
 from .models import IntakeExtraction
 
 log = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ def verify_submission(
         stored = lookup_submission(case_id)
         if stored is None:
             raise AssertionError(f"intake system has no record of case {case_id}")
-        mismatched = [name for name, value in _submitted_values(record).items() if stored.get(name) != value]
+        mismatched = [name for name, value in form_values(record).items() if stored.get(name) != value]
         if mismatched:
             raise AssertionError(f"intake system recorded different values for: {', '.join(mismatched)}")
 
@@ -63,18 +64,6 @@ def verify_submission(
     screenshot = _take_screenshot(page, screenshot_dir, case_id if passed and case_id else f"{label}_FAIL")
     log.log(logging.INFO if passed else logging.ERROR, "Verification %s: %s", "PASS" if passed else "FAIL", detail)
     return VerificationResult(passed=passed, case_id=case_id if passed else None, detail=detail, screenshot=screenshot)
-
-
-def _submitted_values(record: IntakeExtraction) -> dict[str, str | None]:
-    return {
-        "full_name": record.full_name,
-        "email": record.email,
-        "phone": record.phone,
-        "country_of_citizenship": record.country_of_citizenship,
-        "date_of_birth": record.date_of_birth.isoformat() if record.date_of_birth else None,
-        "case_type": record.case_type.value,
-        "urgency": record.urgency.level,
-    }
 
 
 def _failure_detail(page: Page, exc: Exception) -> str:

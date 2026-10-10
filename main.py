@@ -78,7 +78,9 @@ def main(argv: list[str] | None = None) -> int:
         "Done in %s: %d processed, %d submitted (%d PASS, %d FAIL), %d follow-up, %d human review, %d error",
         format_duration(s.duration_s), s.processed, s.submitted, s.passed, s.failed, s.follow_ups, s.needs_review, s.errors,
     )
-    log.info("Report: %s", output.report_path)
+    log.info("Report: %s", output.pdf_path or output.report_path)
+    if output.pdf_path:
+        log.info("        %s (Markdown copy)", output.report_path)
     log.info("Log:    %s", log_file)
     return 1 if s.needs_attention else 0
 

@@ -68,3 +68,17 @@ def test_validate_submission_checks_allowed_values():
     problems = validate_submission({**VALID, "case_type": "Asylum", "urgency": "urgent", "date_of_birth": "31/01/1990"})
 
     assert len(problems) == 3
+
+
+def test_validate_submission_checks_optional_choices_and_dates():
+    problems = validate_submission(
+        {**VALID, "marital_status": "engaged", "preferred_contact_method": "fax", "status_expires_on": "12/15/2026"}
+    )
+
+    assert len(problems) == 3
+
+
+def test_blank_optional_fields_are_accepted():
+    blanks = {"marital_status": "", "preferred_contact_method": "", "status_expires_on": "", "occupation": ""}
+
+    assert validate_submission({**VALID, **blanks}) == []

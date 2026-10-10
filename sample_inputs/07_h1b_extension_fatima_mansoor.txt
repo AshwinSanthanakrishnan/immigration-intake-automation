@@ -12,11 +12,16 @@ Key details:
 - Email: f.mansoor@biomed.example
 - Phone: (555) 623-4100
 - Country of citizenship: United Arab Emirates
+- Country of birth: Pakistan
 - Date of birth: February 14, 1993
+- Current location: Baltimore, Maryland
+- Marital status: Married
+- Employer: Chesapeake University Medical Center
+- Highest education: Ph.D. in Cancer Biology
 - Case type: H-1B extension
 - Urgency: High. My current I-94 status expires on November 30, 2026, so we have approximately 50 days to submit the petition to USCIS.
 
-Please send me the list of documents needed from my department.
+Please send me the list of documents needed from my department. I would also appreciate a short consultation call with the attorney.
 
 Sincerely,
 Dr. Fatima Mansoor

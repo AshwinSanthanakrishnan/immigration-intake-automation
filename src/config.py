@@ -45,6 +45,10 @@ class Paths:
     def report(self) -> Path:
         return self.outputs / "run_report.md"
 
+    @property
+    def report_pdf(self) -> Path:
+        return self.outputs / "run_report.pdf"
+
     def artifact_dirs(self) -> tuple[Path, ...]:
         """Folders rewritten on every run (logs are kept)."""
         return (self.followups, self.screenshots, self.checklists, self.needs_review)

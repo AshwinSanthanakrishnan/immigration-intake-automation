@@ -134,6 +134,59 @@
               <label for="date_of_birth">Date of birth<span class="req" aria-hidden="true">*</span></label>
               <input id="date_of_birth" name="date_of_birth" type="date" min="1900-01-01" required>
             </div>
+            <div>
+              <label for="country_of_birth">Country of birth</label>
+              <input id="country_of_birth" name="country_of_birth" type="text">
+            </div>
+            <div>
+              <label for="current_location">Current city / state</label>
+              <input id="current_location" name="current_location" type="text">
+            </div>
+            <div>
+              <label for="marital_status">Marital status</label>
+              <select id="marital_status" name="marital_status">
+                <option value="">Not stated</option>
+                <option value="single">Single</option>
+                <option value="married">Married</option>
+                <option value="divorced">Divorced</option>
+                <option value="widowed">Widowed</option>
+                <option value="separated">Separated</option>
+              </select>
+            </div>
+            <div>
+              <label for="preferred_contact_method">Preferred contact method</label>
+              <select id="preferred_contact_method" name="preferred_contact_method">
+                <option value="">Not stated</option>
+                <option value="email">Email</option>
+                <option value="phone">Phone</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Immigration &amp; employment background</legend>
+          <div class="grid">
+            <div>
+              <label for="current_immigration_status">Current immigration status</label>
+              <input id="current_immigration_status" name="current_immigration_status" type="text" placeholder="e.g. F-1 (STEM OPT), H-1B, Permanent resident">
+            </div>
+            <div>
+              <label for="status_expires_on">Status expires on</label>
+              <input id="status_expires_on" name="status_expires_on" type="date" min="1900-01-01">
+            </div>
+            <div>
+              <label for="occupation">Occupation</label>
+              <input id="occupation" name="occupation" type="text">
+            </div>
+            <div>
+              <label for="employer">Employer</label>
+              <input id="employer" name="employer" type="text">
+            </div>
+            <div class="full">
+              <label for="highest_education">Highest education</label>
+              <input id="highest_education" name="highest_education" type="text" placeholder="e.g. M.S. Computer Science">
+            </div>
           </div>
         </fieldset>
 
@@ -151,6 +204,10 @@
               </select>
             </div>
             <div>
+              <label for="case_subtype">Case subtype</label>
+              <input id="case_subtype" name="case_subtype" type="text" placeholder="e.g. H-1B transfer">
+            </div>
+            <div>
               <label for="urgency">Urgency<span class="req" aria-hidden="true">*</span></label>
               <select id="urgency" name="urgency" required>
                 <option value="">Select urgency…</option>
@@ -158,6 +215,18 @@
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
               </select>
+            </div>
+            <div>
+              <label for="consultation_requested">Consultation requested</label>
+              <select id="consultation_requested" name="consultation_requested">
+                <option value="">Not stated</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+            <div class="full">
+              <label for="matter_summary">Matter summary</label>
+              <textarea id="matter_summary" name="matter_summary" rows="2"></textarea>
             </div>
             <div class="full">
               <label for="notes">Notes</label>
@@ -222,9 +291,13 @@
       const rows = [
         ["Client", data.full_name],
         ["Email", data.email],
-        ["Case type", data.case_type],
+        ["Phone", data.phone],
+        ["Citizenship", data.country_of_citizenship],
+        ["Current status", data.current_immigration_status],
+        ["Occupation", data.occupation],
+        ["Case type", data.case_subtype ? `${data.case_type} · ${data.case_subtype}` : data.case_type],
         ["Urgency", data.urgency.charAt(0).toUpperCase() + data.urgency.slice(1)],
-      ];
+      ].filter(([, value]) => value);
       document.getElementById("summary").replaceChildren(
         ...rows.flatMap(([term, value]) => {
           const dt = document.createElement("dt");

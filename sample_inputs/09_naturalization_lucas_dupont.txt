@@ -12,9 +12,16 @@ My information:
 - Email: lucas.dupont@paris.example
 - Phone: (555) 219-8765
 - Country of Citizenship: France
+- Country of Birth: France
 - Date of Birth: September 30, 1987
+- Current location: Portland, Oregon
+- Occupation: Pastry chef and restaurant owner
+- Employer: Self-employed (Maison Dupont Bakery)
+- Highest education: Diploma in Culinary Arts
 - Case Type: Naturalization
 - Urgency: Low. There is no rush; I would just like everything reviewed properly before filing.
+
+Email is the best way to reach me.
 
 Thank you very much,
 Lucas Dupont

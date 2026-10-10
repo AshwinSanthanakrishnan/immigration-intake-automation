@@ -21,6 +21,7 @@ from .form_filler import BrowserSession, fill_intake_form
 from .form_server import IntakeServer
 from .input_reader import list_intake_files, read_intake_email
 from .models import IntakeExtraction, Outcome, RecordResult
+from .report_pdf import render_report_html, write_pdf_report
 from .reporting import RunInfo, RunSummary, render_report, summarize, write_report
 from .verification import verify_submission
 
@@ -32,6 +33,7 @@ class RunOutput:
     results: list[RecordResult]
     summary: RunSummary
     report_path: Path
+    pdf_path: Path | None = None  # None if the PDF could not be produced
 
 
 def run_pipeline(settings: Settings, ai: IntakeAI) -> RunOutput:
@@ -54,7 +56,13 @@ def run_pipeline(settings: Settings, ai: IntakeAI) -> RunOutput:
     info = RunInfo(started_at=started_at, ai_engine=ai.name, browser_mode=browser_mode, ai_usage=ai.usage_summary())
     report = render_report(results, summary, info, report_dir=paths.report.parent)
     report_path = write_report(paths.report, report)
-    return RunOutput(results=results, summary=summary, report_path=report_path)
+
+    pdf_path: Path | None = None
+    try:
+        pdf_path = write_pdf_report(paths.report_pdf, render_report_html(results, summary, info))
+    except Exception as exc:  # the Markdown report is already written; a PDF failure must not fail the run
+        log.warning("Could not write the PDF report: %s", exc)
+    return RunOutput(results=results, summary=summary, report_path=report_path, pdf_path=pdf_path)
 
 
 def _process_record(

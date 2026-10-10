@@ -1,4 +1,4 @@
-"""Step 7: summarize a run as Markdown (outputs/run_report.md)."""
+"""Step 7: summarize a run as Markdown (outputs/run_report.md); report_pdf.py renders the PDF."""
 
 from __future__ import annotations
 
@@ -129,7 +129,8 @@ def render_report(results: Sequence[RecordResult], summary: RunSummary, info: Ru
     for number, result in enumerate(results, start=1):
         lines += _record_details(number, result, report_dir)
 
-    lines += _next_steps(summary)
+    if steps := next_steps(summary):
+        lines += ["## Next steps for staff", "", *(f"- {step}" for step in steps), ""]
     lines += [
         "---",
         "*Demo run on fictional data. Nothing was sent to any client or external system; every draft "
@@ -167,6 +168,16 @@ def _record_details(number: int, result: RecordResult, report_dir: Path) -> list
             f"- **Urgency:** {record.urgency.level.capitalize()} · {record.urgency.reason}",
             f"- **Missing fields:** {', '.join(record.missing_field_labels) or 'none'}",
         ]
+        if record.matter_summary:
+            lines.append(f"- **Matter summary:** {record.matter_summary}")
+        details = [
+            (label, value)
+            for name, label, value in record.client_details()
+            if value and name not in ("case_type", "urgency", "matter_summary")
+        ]
+        lines += ["", "| Client detail | Value |", "|---|---|"]
+        lines += [f"| {label} | {_cell(value)} |" for label, value in details]
+        lines.append("")
     if result.extraction_attempts:
         lines.append(f"- **Extraction attempts:** {result.extraction_attempts}")
     if result.artifacts:
@@ -178,17 +189,17 @@ def _record_details(number: int, result: RecordResult, report_dir: Path) -> list
     return lines
 
 
-def _next_steps(summary: RunSummary) -> list[str]:
+def next_steps(summary: RunSummary) -> list[str]:
     steps = []
     if summary.follow_ups:
-        steps.append(f"- Review and send {summary.follow_ups} follow-up draft(s) in `followups/`.")
+        steps.append(f"Review and send {summary.follow_ups} follow-up draft(s) in followups/.")
     if summary.passed:
-        steps.append(f"- Attorney review of {summary.passed} document checklist draft(s) in `checklists/`.")
+        steps.append(f"Attorney review of {summary.passed} document checklist draft(s) in checklists/.")
     if summary.needs_review:
-        steps.append(f"- Complete {summary.needs_review} intake(s) by hand; details in `needs_review/`.")
+        steps.append(f"Complete {summary.needs_review} intake(s) by hand; details in needs_review/.")
     if summary.needs_attention:
-        steps.append("- Investigate failures and errors above; full detail is in the run log under `logs/`.")
-    return ["## Next steps for staff", "", *steps, ""] if steps else []
+        steps.append("Investigate failures and errors above; full detail is in the run log under logs/.")
+    return steps
 
 
 def _relative(path: Path, base: Path) -> str:

@@ -6,11 +6,34 @@ import logging
 
 from playwright.sync_api import Browser, Page, Playwright, sync_playwright
 
-from .models import IntakeExtraction
+from .models import OPTIONAL_FIELDS, IntakeExtraction
 
 log = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT_MS = 10_000
+SELECT_FIELDS = {"marital_status", "preferred_contact_method", "consultation_requested"}
+
+
+def form_values(record: IntakeExtraction) -> dict[str, str]:
+    """Every form field as the string the browser submits ("" for anything not stated)."""
+    values = {
+        "full_name": record.full_name or "",
+        "email": record.email or "",
+        "phone": record.phone or "",
+        "country_of_citizenship": record.country_of_citizenship or "",
+        "date_of_birth": record.date_of_birth.isoformat() if record.date_of_birth else "",
+        "case_type": record.case_type.value,
+        "urgency": record.urgency.level,
+    }
+    for name in OPTIONAL_FIELDS:
+        value = getattr(record, name)
+        if value is None:
+            values[name] = ""
+        elif isinstance(value, bool):
+            values[name] = "yes" if value else "no"
+        else:
+            values[name] = value.isoformat() if hasattr(value, "isoformat") else str(value)
+    return values
 
 
 class BrowserSession:
@@ -87,6 +110,18 @@ def fill_intake_form(page: Page, form_url: str, record: IntakeExtraction, notes:
     page.get_by_label("Date of birth").fill(record.date_of_birth.isoformat())
     page.get_by_label("Case type").select_option(record.case_type.value)
     page.get_by_label("Urgency").select_option(record.urgency.level)
+
+    # Optional details: only fields the email stated are touched; the rest stay blank.
+    values = form_values(record)
+    for name, label in OPTIONAL_FIELDS.items():
+        if not values[name]:
+            continue
+        field = page.get_by_label(label, exact=True)
+        if name in SELECT_FIELDS:
+            field.select_option(values[name])
+        else:
+            field.fill(values[name])
+
     page.get_by_label("Notes").fill(notes)
     page.get_by_role("button", name="Submit intake").click()
     log.info("Submitted intake form for %s", record.full_name)

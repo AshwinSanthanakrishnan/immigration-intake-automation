@@ -25,6 +25,11 @@ log = logging.getLogger(__name__)
 CASE_TYPES = {"H-1B", "Family Green Card", "Naturalization", "Other"}
 URGENCY_LEVELS = {"low", "medium", "high"}
 REQUIRED = ("full_name", "email", "phone", "country_of_citizenship", "date_of_birth", "case_type", "urgency")
+CHOICES = {
+    "marital_status": {"single", "married", "divorced", "widowed", "separated"},
+    "preferred_contact_method": {"email", "phone"},
+    "consultation_requested": {"yes", "no"},
+}
 MAX_BODY_BYTES = 64 * 1024
 _ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -36,8 +41,12 @@ def validate_submission(data: dict[str, Any]) -> list[str]:
         problems.append("case_type is not a recognised case type")
     if data.get("urgency") and data["urgency"] not in URGENCY_LEVELS:
         problems.append("urgency must be low, medium, or high")
-    if data.get("date_of_birth") and not _ISO_DATE_RE.match(str(data["date_of_birth"])):
-        problems.append("date_of_birth must be YYYY-MM-DD")
+    for name in ("date_of_birth", "status_expires_on"):
+        if data.get(name) and not _ISO_DATE_RE.match(str(data[name])):
+            problems.append(f"{name} must be YYYY-MM-DD")
+    for name, allowed in CHOICES.items():
+        if data.get(name) and data[name] not in allowed:
+            problems.append(f"{name} must be one of {', '.join(sorted(allowed))}")
     return problems
 
 

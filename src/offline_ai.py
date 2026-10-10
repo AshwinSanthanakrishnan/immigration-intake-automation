@@ -49,6 +49,40 @@ _HIGH_RE = re.compile(
 )
 _LOW_RE = re.compile(r"\b(no (?:big )?rush|no hurry|not urgent|just curious|general question)\b")
 _FAMILY_RE = re.compile(r"\b(spouse|husband|wife|married|marriage|parent|mother|father|son|daughter|sibling|brother|sister)\b")
+_MONTH_DATE = r"[A-Z][a-z]+ \d{1,2}, \d{4}"
+_EXPIRY_RE = re.compile(rf"\b(?:expires?|expiring|ends?|valid until)(?: on)?\s+({_MONTH_DATE})")
+_EMPLOYER_RE = re.compile(r"\bemployer, ([A-Z][\w&.-]*(?: [A-Z][\w&.-]*)*)")
+_LOCATION_RE = re.compile(
+    r"\b(?:living|working|based|live|reside|residing) in ([A-Z][a-z]+(?: [A-Z][a-z]+)?, [A-Z][a-z]+(?: [A-Z][a-z]+)?)"
+    r"|\bhere in ([A-Z][a-z]+(?: [A-Z][a-z]+)?)"
+)
+_OCCUPATION_RE = re.compile(
+    r"\b((?:[A-Za-z]+ ){0,2}(?:engineer|architect|developer|researcher|scientist|analyst|nurse|physician|"
+    r"teacher|professor|accountant|designer|manager))\b",
+    re.I,
+)
+_EDUCATION_RE = re.compile(
+    r"\b((?:M\.S\.|B\.S\.|M\.A\.|B\.A\.|MBA|Ph\.D\.|Master of [A-Z][A-Za-z]+|Bachelor of [A-Z][A-Za-z]+)"
+    r"(?: in [A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)*)?)"
+)
+# Checked in order; the first match wins.
+_STATUS_RULES: tuple[tuple[str, str], ...] = (
+    (r"\bstem opt\b", "F-1 (STEM OPT)"),
+    (r"\bf-1\b", "F-1"),
+    (r"\bj-1\b", "J-1"),
+    (r"\b(?:lawful )?permanent resident\b|\bgreen card since\b", "Permanent resident"),
+    (r"\bh-1b (?:extension|status)\b|\bcurrent h-1b\b", "H-1B"),
+)
+_SUBTYPE_RULES: tuple[tuple[str, str], ...] = (
+    (r"\bh-?1b transfer\b", "H-1B transfer"),
+    (r"\bh-?1b (?:3-year )?extension\b", "H-1B extension"),
+    (r"\bcap petition\b|\blottery\b", "H-1B cap petition"),
+    (r"\badjustment of status\b", "Marriage-based adjustment of status"),
+    (r"\b3-year marital rule\b|\bmarried to a u\.s\. citizen for over 3 years\b", "N-400 (3-year marriage rule)"),
+    (r"\basylum\b|\bnotice to appear\b", "Asylum / removal defense"),
+)
+_CASE_LABELS = ("case type", "case category", "case classification", "matter")
+_MARITAL = {"single", "married", "divorced", "widowed", "separated"}
 
 _MATTER_WORDING = {
     CaseType.H1B: "H-1B",
@@ -143,10 +177,11 @@ class OfflineAI:
             "phone": _first_match(_PHONE_RE, body),
             "country_of_citizenship": _country(body),
             "date_of_birth": _date_of_birth(body),
-            "case_type": _case_type(body).value,
-            "urgency": _urgency(body),
+            "case_type": (_labeled_case_type(body) or _case_type(body)).value,
+            "urgency": _labeled_urgency(body) or _urgency(body),
         }
         data["missing_fields"] = [name for name in REQUIRED_FIELDS if data[name] is None]
+        data.update(_optional_details(headers, body, data["case_type"]))
         return json.dumps(data)
 
     def draft_followup(self, email_text: str, record: IntakeExtraction) -> str:
@@ -245,3 +280,106 @@ def _urgency(body: str) -> dict[str, str]:
     if match := _LOW_RE.search(text):
         return {"level": "low", "reason": f"Email says '{match.group(0)}' (keyword rule)."}
     return {"level": "medium", "reason": "No deadline or time-pressure keywords found (keyword rule)."}
+
+
+def _labeled(body: str, *labels: str) -> str | None:
+    """The value after "Label:" at the start of a line (optionally a "- " bullet)."""
+    names = "|".join(re.escape(label) for label in labels)
+    match = re.search(rf"^[ \t]*(?:-[ \t]*)?(?:{names})[ \t]*:[ \t]*(.+)$", body, re.I | re.M)
+    return match.group(1).strip() if match else None
+
+
+def _first_group(pattern: re.Pattern[str], text: str) -> str | None:
+    match = pattern.search(text)
+    return match.group(1).strip() if match else None
+
+
+def _first_rule(rules: tuple[tuple[str, str], ...], text: str) -> str | None:
+    return next((value for pattern, value in rules if re.search(pattern, text)), None)
+
+
+def _optional_details(headers: dict[str, str], body: str, case_type: str) -> dict[str, object]:
+    text = body.lower()
+
+    location = _labeled(body, "current location", "location", "current address", "city")
+    if location is None and (match := _LOCATION_RE.search(body)):
+        location = match.group(1) or match.group(2)
+
+    expiry = None
+    if match := _EXPIRY_RE.search(body):
+        try:
+            expiry = datetime.strptime(match.group(1), "%B %d, %Y").date().isoformat()
+        except ValueError:
+            pass
+
+    occupation = _labeled(body, "occupation", "job title", "position")
+    if occupation is None and (match := _OCCUPATION_RE.search(body)):
+        occupation = re.sub(r"^(?:an?|the|as|work|i)\s+", "", match.group(1), flags=re.I)
+        occupation = occupation[0].upper() + occupation[1:]
+
+    education = _labeled(body, "education", "highest education", "degree")
+    if education is None and (match := _EDUCATION_RE.search(body)):
+        education = match.group(1)
+
+    subtype = None
+    labeled_case = _labeled(body, *_CASE_LABELS)
+    if labeled_case and labeled_case.lower() != case_type.lower():
+        subtype = labeled_case
+    subtype = subtype or _first_rule(_SUBTYPE_RULES, text)
+
+    marital = (_labeled(body, "marital status") or "").split()[0:1]
+    marital = marital[0].lower() if marital and marital[0].lower() in _MARITAL else None
+    if marital is None and re.search(r"\b(?:my (?:husband|wife|spouse)|i married|i am married|we got married|married to)\b", text):
+        marital = "married"
+
+    contact = (_labeled(body, "preferred contact", "preferred contact method") or "").lower() or None
+    if contact not in (None, "email", "phone"):
+        contact = None
+    if contact is None and re.search(r"\bemail is the best way\b|\bprefer(?:red)? (?:to be contacted by )?email\b", text):
+        contact = "email"
+    elif contact is None and re.search(
+        r"\b(?:phone|call) is the best way\b|\bprefer(?:red)? (?:to be contacted by |a )?(?:call|phone)\b", text
+    ):
+        contact = "phone"
+
+    summary = _labeled(body, "notes") or headers.get("subject")
+    return {
+        "country_of_birth": _labeled(body, "country of birth", "place of birth"),
+        "current_location": location,
+        "marital_status": marital,
+        "preferred_contact_method": contact,
+        "current_immigration_status": _labeled(body, "current status", "status", "current visa")
+        or _first_rule(_STATUS_RULES, text),
+        "status_expires_on": expiry,
+        "occupation": occupation,
+        "employer": _labeled(body, "employer", "company") or _first_group(_EMPLOYER_RE, body),
+        "highest_education": education,
+        "case_subtype": subtype,
+        "consultation_requested": True if re.search(r"\bconsultation\b", text) else None,
+        "matter_summary": summary,
+    }
+
+
+def _labeled_case_type(body: str) -> CaseType | None:
+    """A form-style "Case Type: ..." line beats keyword guessing over the whole text."""
+    value = (_labeled(body, *_CASE_LABELS) or "").lower()
+    if not value:
+        return None
+    if value.startswith("other"):
+        return CaseType.OTHER
+    if re.search(r"\bh-?1b\b", value):
+        return CaseType.H1B
+    if "naturali" in value or "n-400" in value:
+        return CaseType.NATURALIZATION
+    if "green card" in value or "adjustment of status" in value:
+        return CaseType.FAMILY_GREEN_CARD
+    return None
+
+
+def _labeled_urgency(body: str) -> dict[str, str] | None:
+    value = _labeled(body, "urgency")
+    match = re.match(r"(low|medium|high)\b[\s.:-]*(.*)", value or "", re.I)
+    if not match:
+        return None
+    reason = match.group(2).strip() or f"Client marked urgency as {match.group(1).lower()}."
+    return {"level": match.group(1).lower(), "reason": f"{reason[0].upper()}{reason[1:]} (stated by client)."}

@@ -82,7 +82,32 @@ roughly the next 90 days, or the client describes an emergency. "medium" for an 
 with a deadline further out or a stated wish to move soon. "low" for general questions with \
 no time pressure. urgency.reason: one short sentence citing what in the email drove the level.
 - missing_fields: each of full_name, email, phone, country_of_citizenship, date_of_birth that \
-you returned as null."""
+you returned as null.
+
+Optional details (null when not stated; never list them in missing_fields):
+- country_of_birth: only if the client states where they were born.
+- current_location: the city and state (or country) where the client lives or works now, as \
+written, e.g. "Austin, Texas".
+- marital_status: single, married, divorced, widowed, or separated. Mentioning a current \
+husband, wife, or spouse counts as married.
+- preferred_contact_method: "email" or "phone", only if the client says how they prefer to be \
+reached.
+- current_immigration_status: the client's present U.S. status in a few words, e.g. \
+"F-1 (STEM OPT)", "H-1B", "J-1", "Permanent resident". Null if outside the U.S. or unclear.
+- status_expires_on: YYYY-MM-DD expiry of that status, EAD, I-94, or grace period, only if the \
+full date is stated.
+- occupation, employer: job title and the current or sponsoring employer's name as stated. A \
+description such as "a mid-size analytics company" is not a name; return null.
+- highest_education: highest degree and field, e.g. "M.S. Computer Science".
+- case_subtype: the specific matter within case_type, e.g. "H-1B transfer", "H-1B extension", \
+"H-1B cap petition", "Marriage-based adjustment of status", "N-400 (3-year marriage rule)", \
+"Asylum / removal defense".
+- consultation_requested: true if the client asks for a consultation, meeting, or call.
+- matter_summary: one or two neutral sentences, in the third person, summarizing what the \
+client is asking for. No legal assessment.
+
+Never extract passport numbers, A-numbers, Social Security numbers, or other government \
+identifiers, even if the email contains them."""
 
 FOLLOWUP_SYSTEM = """\
 You draft emails for the intake team of a U.S. immigration law firm. A prospective client \
@@ -135,7 +160,10 @@ def _build_gemini_extraction_schema() -> dict[str, Any]:
             return [inline_refs(item) for item in obj]
         return obj
 
-    return inline_refs(raw)
+    schema = inline_refs(raw)
+    # Optional fields have Python defaults, but ask Gemini for every key (null when unknown).
+    schema["required"] = list(schema["properties"])
+    return schema
 
 
 class GeminiAI:

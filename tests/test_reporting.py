@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from src.models import CaseType, IntakeExtraction, Outcome, RecordResult, Urgency
+from src.report_pdf import render_report_html
 from src.reporting import RunInfo, format_duration, render_report, summarize
 
 OUTPUTS = Path("/tmp/outputs")
@@ -113,6 +114,39 @@ def test_table_cells_escape_pipes():
     report = render_report(results, summarize(results, 1.0), INFO, report_dir=OUTPUTS)
 
     assert "Ana \\| One" in report
+
+
+def test_report_lists_client_details():
+    results = [
+        RecordResult(
+            "a.txt", Outcome.SUBMITTED, make_record(occupation="Data engineer", employer="Northwind"), 1, verified=True
+        )
+    ]
+    report = render_report(results, summarize(results, 1.0), INFO, report_dir=OUTPUTS)
+
+    assert "| Occupation | Data engineer |" in report
+    assert "| Employer | Northwind |" in report
+    assert "| Marital status |" not in report, "unstated details are left out of the Markdown table"
+
+
+def test_pdf_html_has_every_record_and_flags_missing_fields():
+    results = make_results()
+    html = render_report_html(results, summarize(results, 12.0), INFO)
+
+    for number, name in enumerate(("Ana One", "Ben Two", "Cy Three"), start=1):
+        assert f"<h3>{number}. {name}</h3>" in html
+    assert "<h3>4. Unidentified client</h3>" in html
+    assert '<dt>Date of birth</dt><dd><span class="missing">Missing</span></dd>' in html
+    assert "Attention needed: 1 verification failure(s), 1 error(s)." in html
+    assert "Review and send 1 follow-up draft(s)" in html
+
+
+def test_pdf_html_escapes_client_text():
+    results = [RecordResult("a.txt", Outcome.FOLLOW_UP, make_record("<script>x</script>", phone=None), 1)]
+    html = render_report_html(results, summarize(results, 1.0), INFO)
+
+    assert "<script>x</script>" not in html
+    assert "&lt;script&gt;" in html
 
 
 def test_format_duration():
